@@ -22,10 +22,7 @@ case class Building private(numElevators: Int, numFloors: Int, actor: ActorRef[B
 	}
 
 	def moveElevatorToFloor(elevator: Elevator.Id, floor: Floor.Id)(implicit timeout: Timeout): Future[Boolean] = {
-		(actor ? (GetFloor(elevator, _))) map { oldFloor: Floor.Id => {
-			actor ! MoveElevator(elevator,floor)
-			oldFloor != floor
-		}}
+		actor ? (MoveElevator(elevator,floor,_))
 	}
 
 }
@@ -33,28 +30,38 @@ case class Building private(numElevators: Int, numFloors: Int, actor: ActorRef[B
 object Building {
 	sealed trait Message
 	final case class GetFloor(elevator: Elevator.Id, replyTo: ActorRef[Floor.Id]) extends Message
-	final case class MoveElevator(elevator: Elevator.Id, floor: Floor.Id) extends Message
+	final case class MoveElevator(elevator: Elevator.Id, floor: Floor.Id, replyTo: ActorRef[Boolean]) extends Message
 
 	private def initialize(numElevators: Int, numFloors: Int)(implicit system: ActorSystem[Nothing], timeout: Timeout): Behavior[Message] = {
 		val elevators = MMap.empty[Elevator.Id,Elevator]
 		val floors = MMap.empty[Elevator.Id,Floor.Id]
+		val legalFloors = scala.collection.mutable.Set.empty[Floor.Id]
+		(0 to numFloors).foreach(i => {
+			legalFloors += Floor.Id(i)
+		})
 		(0 to numElevators).foreach(i => {
 			val id = Elevator.Id(i)
 			val elevator: Elevator = Await.result(Elevator.create(id),Duration.Inf)
 			elevators.put(id,elevator)
 			floors.put(id,Floor.Id(0))
 		})
-		listening(elevators.toMap,floors.toMap)
+		listening(elevators.toMap,floors.toMap,legalFloors.toSet)
 	}
 
-	private def listening(elevators: Map[Elevator.Id,Elevator], floors: Map[Elevator.Id,Floor.Id]): Behavior[Message] = {
+	private def listening(elevators: Map[Elevator.Id,Elevator], floors: Map[Elevator.Id,Floor.Id], legalFloors: Set[Floor.Id]): Behavior[Message] = {
 		Actor.immutablePartial {
 			case (_, GetFloor(id,replyTo)) =>
 				replyTo ! floors(id)
 				Actor.same
 
-			case (_, MoveElevator(elevator,floor)) =>
-				listening(elevators,floors + ((elevator,floor)))
+			case (_, MoveElevator(elevator,floor,replyTo)) =>
+				if (legalFloors(floor) && floors(elevator) != floor) {
+					replyTo ! true
+					listening(elevators, floors + ((elevator, floor)), legalFloors)
+				} else {
+					replyTo ! false
+					Actor.same
+				}
 		}
 	}
 

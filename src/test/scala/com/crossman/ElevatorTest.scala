@@ -35,11 +35,30 @@ class ElevatorTest extends AsyncFunSuite with Matchers {
 			b$1 <- building.moveElevatorToFloor(Elevator.Id(0),Floor.Id(5))
 			f$2 <- building.getFloor(Elevator.Id(0))
 			b$2 <- building.moveElevatorToFloor(Elevator.Id(0),Floor.Id(5))
+			f$3 <- building.getFloor(Elevator.Id(0))
 		} yield {
 			b$1 shouldBe true
 			b$2 shouldBe false
 			f$1 shouldEqual Floor.Id(0)
 			f$2 shouldEqual Floor.Id(5)
+			f$3 shouldEqual Floor.Id(5)
+		}
+	}
+
+	test("An elevator cannot move to an illegal floor") {
+		for {
+			building <- Building.create(5,1)
+			f$1 <- building.getFloor(Elevator.Id(0))
+			b$1 <- building.moveElevatorToFloor(Elevator.Id(0),Floor.Id(2))
+			f$2 <- building.getFloor(Elevator.Id(0))
+			b$2 <- building.moveElevatorToFloor(Elevator.Id(0),Floor.Id(-1))
+			f$3 <- building.getFloor(Elevator.Id(0))
+		} yield {
+			b$1 shouldBe false
+			b$2 shouldBe false
+			f$1 shouldEqual Floor.Id(0)
+			f$2 shouldEqual Floor.Id(0)
+			f$3 shouldEqual Floor.Id(0)
 		}
 	}
 }
