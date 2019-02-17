@@ -9,7 +9,6 @@ import akka.util.Timeout
 import com.crossman.Building._
 import com.crossman.Elevator.Velocity
 
-import scala.collection.immutable
 import scala.collection.mutable.{Map => MMap}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}

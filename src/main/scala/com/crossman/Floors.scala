@@ -63,6 +63,7 @@ final case class Floors(numFloors: Int, actor: ActorRef[Floors.Message])(implici
 						val fid$1 = Floor.Id(fid.value + 1)
 						setLocation(elevator.id,fid$1)
 						if (dsts.contains(fid$1)) {
+							elevator.removeDestination(fid$1)
 							Velocity.Countdown(2)
 						} else {
 							Velocity.Up
@@ -71,6 +72,7 @@ final case class Floors(numFloors: Int, actor: ActorRef[Floors.Message])(implici
 						val fid$2 = Floor.Id(fid.value - 1)
 						setLocation(elevator.id,fid$2)
 						if (dsts.contains(fid$2)) {
+							elevator.removeDestination(fid$2)
 							Velocity.Countdown(2)
 						} else {
 							Velocity.Down
@@ -79,7 +81,13 @@ final case class Floors(numFloors: Int, actor: ActorRef[Floors.Message])(implici
 						Velocity.Countdown(n - 1)
 					case Velocity.Countdown(1) =>
 						// FIXME: go towards closest destination
-						Velocity.Up
+						if (dsts.isEmpty) {
+							Velocity.Still
+						} else if (dsts.exists(f => f.value < fid.value)) {
+							Velocity.Down
+						} else {
+							Velocity.Up
+						}
 					case v =>
 						v
 				}

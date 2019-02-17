@@ -120,4 +120,70 @@ class ElevatorTest extends AsyncFunSuite with Matchers {
 			f$9 shouldEqual Floor.Id(4)
 		}
 	}
+
+	test("Find two destinations eventually") {
+		for {
+			building <- Building.create(1, numFloors = 3)
+			_   <- building.requestElevatorAt(Elevator.Id(0),Floor.Id(2))
+			_   <- building.tick()
+			f$1 <- building.getLocation(Elevator.Id(0))
+			_   <- building.requestElevatorAt(Elevator.Id(0),Floor.Id(0))
+			_   <- building.tick()
+			f$2 <- building.getLocation(Elevator.Id(0))
+			_   <- building.tick()
+			v$1 <- building.getVelocity(Elevator.Id(0))
+			_   <- building.tick()
+			f$3 <- building.getLocation(Elevator.Id(0))
+			v$2 <- building.getVelocity(Elevator.Id(0))
+			_   <- building.tick()
+			f$4 <- building.getLocation(Elevator.Id(0))
+			v$3 <- building.getVelocity(Elevator.Id(0))
+			_   <- building.tick()
+			f$5 <- building.getLocation(Elevator.Id(0))
+			v$4 <- building.getVelocity(Elevator.Id(0))
+			_   <- building.tick()
+			f$6 <- building.getLocation(Elevator.Id(0))
+			v$5 <- building.getVelocity(Elevator.Id(0))
+			_   <- building.tick()
+			f$7 <- building.getLocation(Elevator.Id(0))
+			v$6 <- building.getVelocity(Elevator.Id(0))
+
+		} yield {
+			f$1 shouldEqual Floor.Id(1)
+			f$2 shouldEqual Floor.Id(0)
+			v$1 shouldEqual Velocity.Countdown(1)
+			f$3 shouldEqual Floor.Id(0)
+			v$2 shouldEqual Velocity.Up
+			f$4 shouldEqual Floor.Id(1)
+			v$3 shouldEqual Velocity.Up
+			f$5 shouldEqual Floor.Id(2)
+			v$4 shouldEqual Velocity.Countdown(2)
+			f$6 shouldEqual Floor.Id(2)
+			v$5 shouldEqual Velocity.Countdown(1)
+			f$7 shouldEqual Floor.Id(2)
+			v$6 shouldEqual Velocity.Still
+		}
+	}
+
+	test("Find three destinations eventually") {
+		for {
+			building <- Building.create(1, numFloors = 3)
+			_   <- building.requestElevatorAt(Elevator.Id(0),Floor.Id(1))
+			_   <- building.requestElevatorAt(Elevator.Id(0),Floor.Id(0))
+			_   <- building.requestElevatorAt(Elevator.Id(0),Floor.Id(2))
+			_   <- building.tick()
+			_   <- building.tick()
+			_   <- building.tick()
+			_   <- building.tick()
+			_   <- building.tick()
+			_   <- building.tick()
+			_   <- building.tick()
+			_   <- building.tick()
+			_   <- building.tick()
+			_   <- building.tick()
+			v$1 <- building.getVelocity(Elevator.Id(0))
+		} yield {
+			v$1 shouldEqual Velocity.Still
+		}
+	}
 }
